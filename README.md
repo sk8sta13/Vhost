@@ -3,17 +3,20 @@ Shell script para gerenciar vhosts de um servidor local para teste.
 
 Uso:
 
-	su ./vhost.sh -h
+	su ./vhost.sh -help
 	Exibi uma ajuda.
 
-	su ./vhost.sh -l
+	su ./vhost.sh -list
 	Exibi uma lista dos vhosts criados.
 
-	su ./vhost.sh -c site.local [/var/www/pasta]
+	su ./vhost.sh -create site.local
 	Cria um vhost com a url "site.local".
 
-	su ./vhost.sh -d site.local
+	su ./vhost.sh -disable site.local
 	Desabilita o vhost "site.local".
 
-	su ./vhost.sh -u site.local
+	su ./vhost.sh -enable site.local
 	Habilita o vhost "site.local".
+
+	su ./vhost.sh -delete site.local
+	Desabilita o vhost "site.local" e deleta todos os arquivos.

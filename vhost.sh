@@ -1,33 +1,37 @@
 #!/bin/bash
 
+SA="/etc/apache2/sites-available/";
+SE="/etc/apache2/sites-enabled/";
+
 case $1 in
-	"-h")
+	"-help")
 		echo "Use: vhost.sh [option] [parameters]";
 		echo "Valid options:";
-		echo "  -c [url] [folder],	creates a vhost through the folder and the url, restart apache and exit";
-		echo "  -l,			show a list of vhosts and exit";
-		echo "  -h,			show this help and exit";
-		echo "  -u [url],		enables site, restart apache and exit";
-		echo "  -d [url],		disables site, restart apache and exit"
+		echo "  -create [url] [folder],	creates a vhost through the folder and the url, restart apache and exit";
+		echo "  -list,			show a list of vhosts and exit";
+		echo "  -help,			show this help and exit";
+		echo "  -enable [url],		enables site, restart apache and exit";
+		echo "  -disable [url],		disables site, restart apache and exit"
+		echo "  -delete [url],		disables site and delete all files"
 	;;
-	"-l")
-		for file_name in /etc/apache2/sites-available/*.conf; do
-			i=0;
-			h="";
-			u="";
-			while read line; do
-				i=`expr $i + 1`
-				if [ $i = 4 ]; then
-					u=${line//ServerAlias /};
-				fi
-				if [ $i = 5 ]; then
-					h=${line//DocumentRoot /};
-				fi
-			done < $file_name
-			echo "$h -> $u";
+	"-list")
+		for file_name in $SA*; do
+			if [ -e ${file_name//-available/-enabled} ]; then
+				stat="enabled";
+			else
+				stat="disabled";
+			fi
+
+			url=$(grep "ServerAlias" $file_name)
+			url=${url//	ServerAlias /}
+
+			path=$(grep "DocumentRoot" $file_name)
+			path=${path//	DocumentRoot /}
+
+			echo "$url	$stat -> $path"
 		done
 	;;
-	"-c")
+	"-create")
 		if [ $# -ge 2 ]; then
 			if [ $# = 2 ]; then
 				folder="/var/www/$2";
@@ -39,18 +43,15 @@ case $1 in
 				mkdir $folder
 			fi
 
-			se="/etc/apache2/sites-enabled/$2";
-			sa="/etc/apache2/sites-available/$2";
+			echo "<VirtualHost *:80>" >> $SA$2;
+			echo "	ServerName $2" >> $SA$2;
+			echo "	ServerAlias $2" >> $SA$2;
+			echo "	DocumentRoot $folder" >> $SA$2;
+			echo "	ErrorLog \${APACHE_LOG_DIR}/error.log" >> $SA$2;
+			echo "	CustomLog \${APACHE_LOG_DIR}/access.log combined" >> $SA$2;
+			echo "</VirtualHost>" >> $SA$2;
 
-			echo "<VirtualHost *:80>" >> $sa;
-			echo "	ServerName $2" >> $sa;
-			echo "	ServerAlias $2" >> $sa;
-			echo "	DocumentRoot $folder" >> $sa;
-			echo "	ErrorLog \${APACHE_LOG_DIR}/error.log" >> $sa;
-			echo "	CustomLog \${APACHE_LOG_DIR}/access.log combined" >> $sa;
-			echo "</VirtualHost>" >> $sa;
-
-			ls -s $sa $se
+			ln -s $SA$2 $SE$2
 			
 			/etc/init.d/apache2 restart
 
@@ -59,21 +60,29 @@ case $1 in
 			echo "is lacking any argument."
 		fi
 	;;
-	"-u")
+	"-enable")
 		if [ $# -ge 2 ]; then
-			se="/etc/apache2/sites-enabled/$2";
-			sa="/etc/apache2/sites-available/$2";
-			ls -s $sa $se
+			ln -s $SA$2 $SE$2
 			/etc/init.d/apache2 restart
 			echo "the site is enabled"
 		fi
 	;;
-	"-d")
+	"-disable")
 		if [ $# -ge 2 ]; then
-			se="/etc/apache2/sites-enabled/$2";
-			rm -r $se;
+			rm $SE$2;
 			/etc/init.d/apache2 restart
 			echo "the site is disabled"
+		fi
+	;;
+	"-delete")
+		if [ $# -ge 2 ]; then
+			path=$(grep "DocumentRoot" $SA$2)
+			path=${path//	DocumentRoot /}
+			rm $SA$2
+			rm $SE$2
+			rm -r $path
+			/etc/init.d/apache2 restart
+			echo "the host deleted"
 		fi
 	;;
 	*)
