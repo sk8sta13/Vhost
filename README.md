@@ -12,7 +12,8 @@ sudo chmod +x /usr/bin/vhost
 ##Use
 
 Displaying help
-`su vhost -help
+
+'su vhost -help
 
 Displays a list of vhosts created in test server.
 `su vhost -list
