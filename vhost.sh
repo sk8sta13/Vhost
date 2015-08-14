@@ -36,22 +36,25 @@ case $1 in
 			if [ $# = 2 ]; then
 				folder="/var/www/$2";
 			else
-				folder=$3
+				folder=$3;
 			fi
 
 			if [ ! -d $folder ]; then
 				mkdir $folder
 			fi
 
-			echo "<VirtualHost *:80>" >> $SA$2;
-			echo "	ServerName $2" >> $SA$2;
-			echo "	ServerAlias $2" >> $SA$2;
-			echo "	DocumentRoot $folder" >> $SA$2;
-			echo "	ErrorLog \${APACHE_LOG_DIR}/error.log" >> $SA$2;
-			echo "	CustomLog \${APACHE_LOG_DIR}/access.log combined" >> $SA$2;
-			echo "</VirtualHost>" >> $SA$2;
+			SAC="$SA$2.conf";
+			SEC="$SE$2.conf";
 
-			ln -s $SA$2 $SE$2
+			echo "<VirtualHost *:80>" >> $SAC;
+			echo "	ServerName $2" >> $SAC;
+			echo "	ServerAlias $2" >> $SAC;
+			echo "	DocumentRoot $folder" >> $SAC;
+			echo "	ErrorLog \${APACHE_LOG_DIR}/error.log" >> $SAC;
+			echo "	CustomLog \${APACHE_LOG_DIR}/access.log combined" >> $SAC;
+			echo "</VirtualHost>" >> $SAC;
+
+			ln -s $SAC $SEC
 			
 			/etc/init.d/apache2 restart
 
@@ -62,27 +65,35 @@ case $1 in
 	;;
 	"-enable")
 		if [ $# -ge 2 ]; then
-			ln -s $SA$2 $SE$2
+			SAC="$SA$2.conf"
+			SEC="$SA$2.conf"
+			ln -s $SAC $SEC
 			/etc/init.d/apache2 restart
 			echo "the site is enabled"
+		else
+			echo "is lacking any argument."
 		fi
 	;;
 	"-disable")
 		if [ $# -ge 2 ]; then
-			rm $SE$2;
+			rm "$SE$2.conf";
 			/etc/init.d/apache2 restart
 			echo "the site is disabled"
+		else
+			echo "is lacking any argument."
 		fi
 	;;
 	"-delete")
 		if [ $# -ge 2 ]; then
 			path=$(grep "DocumentRoot" $SA$2)
 			path=${path//	DocumentRoot /}
-			rm $SA$2
-			rm $SE$2
+			rm "$SA$2.conf"
+			rm "$SE$2.conf"
 			rm -r $path
 			/etc/init.d/apache2 restart
 			echo "the host deleted"
+		else
+			echo "is lacking any argument."
 		fi
 	;;
 	*)
